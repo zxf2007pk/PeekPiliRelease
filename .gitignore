@@ -1,0 +1,56 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# 构建输出
+dist/
+build/
+*.log
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 临时文件
+*.tmp
+*.temp
+*.cache
+
+# 编译文件
+*.class
+*.jar
+*.pyc
+__pycache__/
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+db.json
+
+# 敏感信息
+*.key
+*.pem
+*.cert
+secrets/
+
+# Release 文件夹中的临时文件（但保留安装包）
+release/*.tmp
+release/*.temp
+

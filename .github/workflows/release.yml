@@ -1,0 +1,91 @@
+name: 自动发布 Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (例如: v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      release_notes:
+        description: '发布说明'
+        required: false
+        default: '新版本发布'
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 设置版本号
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "版本号: $VERSION"
+      
+      - name: 创建 Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## 🎉 新版本发布
+            
+            ${{ github.event.inputs.release_notes || '新版本发布' }}
+            
+            ## 📦 下载安装包
+            
+            请从下方 Assets 中下载对应平台的安装包。
+            
+            ## 📝 更新内容
+            
+            - 查看 [CHANGELOG.md](CHANGELOG.md) 了解详细更新内容
+            
+            ## ⚠️ 注意事项
+            
+            - 请根据您的设备平台选择合适的安装包
+            - 安装前请备份重要数据
+          draft: false
+          prerelease: false
+      
+      - name: 上传 Release 文件
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/
+          asset_name: release-assets.zip
+          asset_content_type: application/zip
+        continue-on-error: true
+      
+      - name: 上传单个文件
+        run: |
+          cd release
+          for file in *; do
+            if [ -f "$file" ]; then
+              echo "上传文件: $file"
+              curl -X POST \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Content-Type: $(file -b --mime-type "$file")" \
+                --data-binary @"$file" \
+                "${{ steps.create_release.outputs.upload_url }}?name=$file" || true
+            fi
+          done
+
